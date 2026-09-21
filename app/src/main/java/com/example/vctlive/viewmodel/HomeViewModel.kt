@@ -46,6 +46,7 @@ import kotlinx.coroutines.launch
             viewModelScope.launch {
 
                 _loading.value = true
+                _error.value = null
 
                 try {
 

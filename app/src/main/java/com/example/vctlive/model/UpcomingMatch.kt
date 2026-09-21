@@ -4,6 +4,8 @@ data class UpcomingMatch(
 
     val team1: String,
     val team2: String,
+    val team1Logo: String?,
+    val team2Logo: String?,
     val startsIn: String,
     val unixTimestamp: String,
     val event: String,

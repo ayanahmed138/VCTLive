@@ -164,13 +164,10 @@ fun TeamBlock(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(logo)
-                .crossfade(true)
-                .build(),
-            contentDescription = name,
-            modifier = Modifier.size(56.dp)
+        TeamLogo(
+            logo = logo,
+            name = name,
+            size = 56.dp
         )
 
         Spacer(Modifier.height(8.dp))

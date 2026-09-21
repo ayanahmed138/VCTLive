@@ -1,8 +1,5 @@
 package com.example.vctlive.ui.screens
 
-
-import android.content.Intent
-import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,56 +15,31 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.vctlive.data.datastore.UserPreferences
-import com.example.vctlive.data.repository.MatchRepository
+import androidx.compose.ui.unit.dp
 import com.example.vctlive.notification.NotificationHelper
-import com.example.vctlive.service.LiveMatchService
-import com.example.vctlive.viewmodel.HomeViewModel
-import com.example.vctlive.viewmodel.HomeViewModelFactory
-import android.graphics.BitmapFactory
-import androidx.compose.runtime.rememberCoroutineScope
-
+import com.example.vctlive.ui.components.HomeHeader
 import com.example.vctlive.ui.components.LiveMatchCard
+import com.example.vctlive.ui.components.ScreenState
+import com.example.vctlive.ui.components.SectionHeader
 import com.example.vctlive.ui.components.UpcomingMatchCard
 import com.example.vctlive.ui.util.extractMatchId
-import kotlinx.coroutines.Dispatchers
+import com.example.vctlive.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.net.URL
 
-suspend fun bitmapFromUrl(url: String): Bitmap =
-    withContext(Dispatchers.IO) {
-        URL(url).openStream().use {
-            BitmapFactory.decodeStream(it)
-        }
-    }
 @Composable
-fun FollowingScreen() {
+fun FollowingScreen(viewModel: HomeViewModel) {
 
     val context = LocalContext.current
-
-    val repository = remember {
-        MatchRepository(
-            UserPreferences(context)
-        )
-    }
-
-    val factory = remember {
-        HomeViewModelFactory(repository)
-    }
-
-    val viewModel: HomeViewModel = viewModel(factory = factory)
+    val scope = rememberCoroutineScope()
 
     val liveMatches by viewModel.liveMatches.collectAsState()
     val upcomingMatches by viewModel.upcomingMatches.collectAsState()
+    val loading by viewModel.loading.collectAsState()
+    val error by viewModel.error.collectAsState()
     val followedMatches by viewModel.followedMatches.collectAsState()
 
     val followedLive = liveMatches.filter {
@@ -78,119 +50,96 @@ fun FollowingScreen() {
         followedMatches.contains(extractMatchId(it.matchPage))
     }
 
-    if (followedLive.isEmpty() && followedUpcoming.isEmpty()) {
+    ScreenState(
+        loading = loading,
+        error = error,
+        onRetry = { viewModel.loadMatches() }
+    ) {
 
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("⭐ No followed matches yet")
-        }
-        Column {
+        if (followedLive.isEmpty() && followedUpcoming.isEmpty()) {
 
-//            Button(
-//                onClick = {
-//                    NotificationHelper.showTestNotification(context)
-//                }
-//            ) {
-//                Text("Score 1")
-//            }
-//
-//            Spacer(modifier = Modifier.height(8.dp))
-//
-//            Button(
-//                onClick = {
-//                    NotificationHelper.showLiveNotification(
-//                        context,
-//                        "🔴 LIVE",
-//                        "Sentinels 2 - 0 PRX",
-//                        "Match Finished",
-//                        "Masters Toronto"
-//                    )
-//                }
-//            ) {
-//                Text("Score 2")
-//            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            val context = LocalContext.current
-            val scope = rememberCoroutineScope()
-            Button(
-                onClick = {
-
-                    scope.launch {
-
-                        NotificationHelper.showLiveNotification(
-                            context,
-                            "Sentinels",
-                            "Paper Rex",
-                            "5 - 7",
-                            "Map 2 • Haven",
-                            "Series 1 - 0",
-                            "Masters Toronto"
-                        )
-
-                    }
-
-                }
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Show Live Notification")
-            }
-        }
-    } else {
+                Text(
+                    text = "⭐ No followed matches yet",
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            if (followedLive.isNotEmpty()) {
-
-                item {
-                    Text(
-                        "🔴 Live",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                }
-
-                items(followedLive) { match ->
-
-                    LiveMatchCard(
-                        match = match,
-                        isFollowed = true,
-                        onFollowClick = {
-                            viewModel.toggleFollow(match.matchId, true)
-                        }
-                    )
-                }
-            }
-
-            if (followedUpcoming.isNotEmpty()) {
-
-                item {
-                    Text(
-                        "📅 Upcoming",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                }
-
-                items(followedUpcoming) { match ->
-
-                    UpcomingMatchCard(
-                        match = match,
-                        isFollowed = true,
-                        onFollowClick = {
-                            viewModel.toggleFollow(
-                                extractMatchId(match.matchPage),
-                                true
+                // Test button for the notification (remove when the real one is wired up)
+                Button(
+                    onClick = {
+                        scope.launch {
+                            NotificationHelper.showLiveNotification(
+                                context,
+                                "Sentinels",
+                                "Paper Rex",
+                                "5 - 7",
+                                "Map 2 • Haven",
+                                "Series 1 - 0",
+                                "Masters Toronto"
                             )
                         }
-                    )
+                    }
+                ) {
+                    Text("Show Live Notification")
+                }
+            }
+
+        } else {
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 40.dp, start = 12.dp, end = 12.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                item {
+                    HomeHeader("Following", "Matches you're tracking")
+                }
+
+                if (followedLive.isNotEmpty()) {
+
+                    item {
+                        SectionHeader("\uD83D\uDD34 Live")
+                    }
+
+                    items(followedLive, key = { it.matchId }) { match ->
+                        LiveMatchCard(
+                            match = match,
+                            isFollowed = true,
+                            onFollowClick = {
+                                viewModel.toggleFollow(match.matchId, true)
+                            }
+                        )
+                    }
+                }
+
+                if (followedUpcoming.isNotEmpty()) {
+
+                    item {
+                        SectionHeader("\uD83D\uDCC5 Upcoming")
+                    }
+
+                    items(followedUpcoming, key = { it.matchPage }) { match ->
+                        UpcomingMatchCard(
+                            match = match,
+                            isFollowed = true,
+                            onFollowClick = {
+                                viewModel.toggleFollow(
+                                    extractMatchId(match.matchPage),
+                                    true
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }
     }
-
 }

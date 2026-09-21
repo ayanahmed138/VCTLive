@@ -62,7 +62,11 @@ fun UpcomingMatchCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                TeamName(match.team1)
+                TeamBlock(
+                    name = match.team1,
+                    logo = match.team1Logo,
+                    modifier = Modifier.width(110.dp)
+                )
 
                 Text(
                     text = "VS",
@@ -71,7 +75,11 @@ fun UpcomingMatchCard(
                     fontWeight = FontWeight.Bold
                 )
 
-                TeamName(match.team2)
+                TeamBlock(
+                    name = match.team2,
+                    logo = match.team2Logo,
+                    modifier = Modifier.width(110.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -111,22 +119,5 @@ fun UpcomingMatchCard(
                 }
             }
         }
-    }
-}
-@Composable
-fun TeamName(name: String) {
-
-    Box(
-        modifier = Modifier.width(110.dp),
-        contentAlignment = Alignment.Center
-    ) {
-
-        Text(
-            text = name,
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
     }
 }
