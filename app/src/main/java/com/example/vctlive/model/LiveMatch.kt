@@ -9,5 +9,6 @@ data class LiveMatch(
     val seriesScore: String,
     val currentMapScore: String,
     val currentMap: String,
-    val event: String
+    val event: String,
+    val mapNumber: Int = 0   // 1-based; 0 if the first map hasn't started yet
 )

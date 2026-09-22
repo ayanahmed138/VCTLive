@@ -32,9 +32,15 @@ import com.example.vctlive.ui.components.UpcomingMatchCard
 import com.example.vctlive.ui.util.extractMatchId
 import com.example.vctlive.viewmodel.HomeViewModel
 import androidx.compose.material3.Button
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.app.NotificationManagerCompat
 import com.example.vctlive.notification.NotificationHelper
-
+import com.example.vctlive.service.TeamsIconBuilder
+import com.example.vctlive.ui.util.toTeamIconUrl
+import kotlinx.coroutines.launch
+import com.example.vctlive.service.LogoCache
+import com.example.vctlive.service.MatchCardImageBuilder
+import com.example.vctlive.network.RetrofitInstance
 @Composable
 fun FollowingScreen(viewModel: HomeViewModel) {
 
@@ -94,22 +100,49 @@ fun FollowingScreen(viewModel: HomeViewModel) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                val scope = rememberCoroutineScope()
+
                 Button(onClick = {
                     if (ContextCompat.checkSelfPermission(
                             context,
                             Manifest.permission.POST_NOTIFICATIONS
                         ) == PackageManager.PERMISSION_GRANTED
                     ) {
-                        NotificationManagerCompat.from(context).notify(
-                            LiveMatchService.NOTIFICATION_ID,
-                            NotificationHelper.buildLiveUpdateNotification(
-                                context = context,
-                                title = "Sentinels vs Paper Rex",
+                        scope.launch {
+                            val team1LogoUrl = "${RetrofitInstance.BASE_URL.trimEnd('/')}/team-icons/2.webp"
+                            val team2LogoUrl = "${RetrofitInstance.BASE_URL.trimEnd('/')}/team-icons/624.webp"
+
+                            val logo1 = LogoCache.get(team1LogoUrl)
+                            val logo2 = LogoCache.get(team2LogoUrl)
+
+                            val smallIcon = TeamsIconBuilder.build(
+                                "Sentinels", team1LogoUrl,
+                                "Paper Rex", team2LogoUrl
+                            )
+
+                            val card = MatchCardImageBuilder.build(
+                                team1Name = "Sentinels",
+                                team1Logo = logo1,
+                                team2Name = "Paper Rex",
+                                team2Logo = logo2,
                                 score = "5 - 3",
-                                detail = "Map 2 • Haven",
+                                mapLine = "Map 2 • Haven",
                                 event = "Masters Toronto"
                             )
-                        )
+
+                            NotificationManagerCompat.from(context).notify(
+                                LiveMatchService.NOTIFICATION_ID,
+                                NotificationHelper.buildLiveUpdateNotification(
+                                    context = context,
+                                    title = "Sentinels vs Paper Rex",
+                                    score = "5 - 3",
+                                    detail = "Map 2 • Haven",
+                                    event = "Masters Toronto",
+                                    largeIcon = smallIcon
+
+                                )
+                            )
+                        }
                     }
                 }) {
                     Text("Test Pill")

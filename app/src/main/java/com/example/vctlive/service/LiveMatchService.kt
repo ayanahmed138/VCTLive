@@ -2,11 +2,13 @@ package com.example.vctlive.service
 
 import android.app.Service
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.IBinder
 import androidx.core.app.NotificationManagerCompat
 import com.example.vctlive.data.datastore.UserPreferences
 import com.example.vctlive.network.RetrofitInstance
 import com.example.vctlive.notification.NotificationHelper
+import com.example.vctlive.ui.util.toLogoUrl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -14,9 +16,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 
 /**
  * Foreground service that keeps one followed live match's Live Update notification
@@ -79,21 +78,27 @@ class LiveMatchService : Service() {
                     return
                 }
 
+                val smallIcon = TeamsIconBuilder.build(
+                    match.team1, match.team1Logo.toLogoUrl(),
+                    match.team2, match.team2Logo.toLogoUrl()
+                )
+
+                // Chip / collapsed row: the fast-changing round score for the current map.
+                // Body (expanded): the slower series score (maps won) + which map this is.
+                val mapLabel = if (match.mapNumber > 0) "Map ${match.mapNumber}: ${match.currentMap}"
+                                else match.currentMap
+
                 val notification = NotificationHelper.buildLiveUpdateNotification(
                     context = this@LiveMatchService,
                     title = "${match.team1} vs ${match.team2}",
-                    score = match.seriesScore,
-                    detail = "${match.currentMap} • ${match.currentMapScore}",
-                    event = match.event
+                    score = match.currentMapScore,
+                    detail = "Series ${match.seriesScore}  •  $mapLabel",
+                    event = match.event,
+                    largeIcon = smallIcon
                 )
-                if (ContextCompat.checkSelfPermission(
-                        this@LiveMatchService,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    NotificationManagerCompat.from(this@LiveMatchService)
-                        .notify(NOTIFICATION_ID, notification)
-                }
+
+                NotificationManagerCompat.from(this@LiveMatchService)
+                    .notify(NOTIFICATION_ID, notification)
 
             } catch (e: Exception) {
                 // Network hiccup — try again next cycle rather than crashing the service.

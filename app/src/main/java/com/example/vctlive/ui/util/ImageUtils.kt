@@ -19,3 +19,5 @@ fun String?.toLogoUrl(): String? {
         else -> this
     }
 }
+fun String.toTeamIconUrl(): String =
+    RetrofitInstance.BASE_URL.trimEnd('/') + "/team-icons/$this.webp"

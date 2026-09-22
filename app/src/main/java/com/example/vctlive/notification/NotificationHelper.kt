@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.vctlive.R
@@ -45,7 +46,12 @@ object NotificationHelper {
         title: String,
         score: String,
         detail: String,
-        event: String
+        event: String,
+        // Composite "logo vs logo" image — shows in the expanded card
+        // (shade / lock screen / AOD), NOT in the tiny status-bar chip itself.
+        // The chip is always just the small icon + short text; that part
+        // is fixed by the platform, not something an app can change.
+        largeIcon: Bitmap? = null
     ): Notification {
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -57,6 +63,16 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
 
+        if (largeIcon != null) {
+            builder.setLargeIcon(largeIcon)
+        }
+
+        // IMPORTANT: BigPictureStyle is NOT on Android 16's list of promotable styles
+        // on any shipping device (only: no style, BigTextStyle, CallStyle, ProgressStyle).
+        // Using it silently disqualifies the notification from the Live Update chip —
+        // that's a confirmed platform limitation, not a bug in this code. Stick to
+        // BigTextStyle here; the logos live in largeIcon instead (smaller, but it
+        // keeps the chip working).
         val bigText = listOf(detail, event).filter { it.isNotBlank() }.joinToString("\n")
 
         if (bigText.isNotBlank()) {
