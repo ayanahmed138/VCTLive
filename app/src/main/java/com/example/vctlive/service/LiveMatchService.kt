@@ -14,6 +14,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 
 /**
  * Foreground service that keeps one followed live match's Live Update notification
@@ -83,9 +86,14 @@ class LiveMatchService : Service() {
                     detail = "${match.currentMap} • ${match.currentMapScore}",
                     event = match.event
                 )
-
-                NotificationManagerCompat.from(this@LiveMatchService)
-                    .notify(NOTIFICATION_ID, notification)
+                if (ContextCompat.checkSelfPermission(
+                        this@LiveMatchService,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    NotificationManagerCompat.from(this@LiveMatchService)
+                        .notify(NOTIFICATION_ID, notification)
+                }
 
             } catch (e: Exception) {
                 // Network hiccup — try again next cycle rather than crashing the service.
